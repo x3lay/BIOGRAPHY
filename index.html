@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title data-key="title">x3lay | BIO </title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --neon-green: #00ffa3;
+            --neon-blue: #00d2ff;
+            --dark-bg: #030303;
+            --card-bg: rgba(10, 10, 10, 0.65);
+            --border: rgba(255, 255, 255, 0.08);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+            --text-main: #ffffff;
+            --text-sec: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            cursor: none;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .loader-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s ease, visibility 0.5s;
+        }
+
+        .loader-bar {
+            width: 200px;
+            height: 2px;
+            background: rgba(255,255,255,0.1);
+            margin-top: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .loader-bar::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 0%;
+            background: var(--neon-green);
+            animation: load 1.5s ease-in-out forwards;
+        }
+
+        .loader-text {
+            font-family: 'Rajdhani', sans-serif;
+            letter-spacing: 2px;
+            font-size: 14px;
+            color: var(--neon-green);
+            text-transform: uppercase;
+        }
+
+        @keyframes load { 100% { width: 100%; } }
+
+        .cursor-dot, .cursor-circle {
+            position: fixed;
+            top: 0;
+            left: 0;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            mix-blend-mode: difference;
+        }
+
+        .cursor-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--neon-green);
+        }
+
+        .cursor-circle {
+            width: 40px;
+            height: 40px;
+            border: 1px solid var(--neon-green);
+            transition: width 0.2s, height 0.2s;
+        }
+
+        body.hovering .cursor-circle {
+            width: 60px;
+            height: 60px;
+            background: rgba(0, 255, 163, 0.1);
+            border-color: transparent;
+        }
+
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .vignette {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, transparent 0%, #000 120%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .card-perspective {
+            perspective: 1500px;
+            width: 100%;
+            max-width: 440px;
+            padding: 20px;
+            z-index: 10;
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-radius: 24px;
+            border: var(--glass-border);
+            padding: 30px;
+            position: relative;
+            transform-style: preserve-3d;
+            box-shadow: 0 40px 80px rgba(0,0,0,0.6), 
+                        inset 0 0 0 1px rgba(255,255,255,0.05);
+            overflow: hidden;
+            transition: transform 0.1s ease-out;
+        }
+
+        .glass-card::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+            opacity: 0.4;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .glow-spot {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(0,255,163,0.15) 0%, transparent 70%);
+            top: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 12px;
+            color: var(--neon-green);
+            background: rgba(0, 255, 163, 0.1);
+            padding: 4px 10px;
+            border-radius: 20px;
+            border: 1px solid rgba(0, 255, 163, 0.2);
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--neon-green);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--neon-green);
+            animation: pulse 2s infinite;
+        }
+
+        .lang-switch {
+            display: flex;
+            background: rgba(0,0,0,0.4);
+            border-radius: 20px;
+            padding: 4px;
+            border: 1px solid var(--border);
+            user-select: none;
+        }
+
+        .lang-switch span {
+            padding: 6px 14px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--text-sec);
+        }
+        .lang-switch span.active { 
+            background: var(--neon-green);
+            color: #000;
+            box-shadow: 0 0 10px rgba(0, 255, 163, 0.5);
+            cursor: default;
+        }
+        
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+
+        .profile-section {
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .avatar-container {
+            width: 90px;
+            height: 90px;
+            margin: 0 auto 15px;
+            position: relative;
+        }
+
+        .avatar-img {
+            width: 100%;
+            height: 100%;
+            background: #111;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.1);
+            position: relative;
+            z-index: 2;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .avatar-img svg { width: 50%; height: 50%; stroke: var(--neon-green); }
+
+        .scan-line {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, transparent, rgba(0,255,163,0.5), transparent);
+            transform: translateY(-100%);
+            animation: scan 3s infinite ease-in-out;
+            z-index: 3;
+            opacity: 0.5;
+        }
+
+        @keyframes scan { 0% { transform: translateY(-100%); } 100% { transform: translateY(100%); } }
+
+        .glitch-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        
+        h1 {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 5px;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .glitch {
+            position: relative;
+        }
+
+        .glitch::before, .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+        }
+
+        .glitch::before {
+            left: 2px; text-shadow: -1px 0 #ff00c1; clip: rect(44px, 450px, 56px, 0);
+            animation: glitch-anim 5s infinite linear alternate-reverse;
+        }
+        .glitch::after {
+            left: -2px; text-shadow: -1px 0 #00fff9; clip: rect(44px, 450px, 56px, 0);
+            animation: glitch-anim2 5s infinite linear alternate-reverse;
+        }
+
+        @keyframes glitch-anim {
+            0% { clip: rect(14px, 9999px, 89px, 0); }
+            5% { clip: rect(81px, 9999px, 2px, 0); }
+            10% { clip: rect(6px, 9999px, 85px, 0); }
+            15% { clip: rect(9999px, 9999px, 9999px, 0); }
+            100% { clip: rect(9999px, 9999px, 9999px, 0); }
+        }
+        @keyframes glitch-anim2 {
+            0% { clip: rect(65px, 9999px, 95px, 0); }
+            5% { clip: rect(2px, 9999px, 3px, 0); }
+            10% { clip: rect(90px, 9999px, 11px, 0); }
+            15% { clip: rect(9999px, 9999px, 9999px, 0); }
+            100% { clip: rect(9999px, 9999px, 9999px, 0); }
+        }
+
+        .role-tag {
+            font-family: 'Rajdhani', monospace;
+            color: var(--neon-green);
+            font-size: 14px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 25px;
+            display: inline-block;
+            border-bottom: 1px solid rgba(0, 255, 163, 0.3);
+            padding-bottom: 2px;
+        }
+        
+        .bio-text {
+            font-size: 14px;
+            color: var(--text-sec);
+            line-height: 1.6;
+            margin-bottom: 25px;
+            text-align: left;
+        }
+        .bio-text .highlight-lang {
+            color: #fff;
+            font-weight: 700;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 35px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .stat-box {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 15px;
+            text-align: center;
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            transition: 0.3s;
+        }
+
+        .stat-box:hover {
+            background: rgba(0, 255, 163, 0.05);
+            border-color: rgba(0, 255, 163, 0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 255, 163, 0.1);
+        }
+
+        .stat-box::before { content: ''; position: absolute; top: 0; left: 0; width: 10px; height: 10px; border-top: 2px solid var(--neon-green); border-left: 2px solid var(--neon-green); border-radius: 4px 0 0 0; opacity: 0.5; }
+        .stat-box::after { content: ''; position: absolute; bottom: 0; right: 0; width: 10px; height: 10px; border-bottom: 2px solid var(--neon-green); border-right: 2px solid var(--neon-green); border-radius: 0 0 4px 0; opacity: 0.5; }
+
+        .stat-num { display: block; font-size: 26px; font-weight: 700; color: #fff; line-height: 1.2; }
+        .stat-label { font-size: 10px; color: var(--text-sec); text-transform: uppercase; letter-spacing: 1px; font-family: 'Rajdhani'; }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 30px 0 20px;
+            color: var(--text-sec);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 700;
+        }
+        .divider::after { content: ''; height: 1px; background: rgba(255,255,255,0.1); flex: 1; }
+        .divider svg { width: 14px; height: 14px; fill: var(--neon-green); }
+
+        .cyber-links {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .cyber-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(90deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0) 100%);
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 16px 20px;
+            border-radius: 12px;
+            text-decoration: none;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cyber-btn:hover {
+            border-color: var(--neon-green);
+            background: rgba(0, 255, 163, 0.05);
+            transform: scale(1.02);
+        }
+
+        .btn-content h3 { font-size: 15px; color: #fff; font-weight: 600; margin-bottom: 2px; }
+        .btn-content p { font-size: 11px; color: var(--text-sec); }
+
+        .btn-icon {
+            width: 36px; height: 36px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; transition: 0.3s;
+        }
+        
+        .cyber-btn:hover .btn-icon { background: var(--neon-green); color: #000; box-shadow: 0 0 15px var(--neon-green); }
+
+        .steps-container { position: relative; z-index: 2; margin-top: 10px; }
+        
+        .step {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            position: relative;
+        }
+        
+        .step:not(:last-child)::before {
+            content: ''; position: absolute;
+            left: 14px; top: 35px; height: calc(100% + 10px); width: 1px;
+            background: linear-gradient(to bottom, var(--neon-green), rgba(255,255,255,0.1));
+            z-index: 1;
+        }
+
+        .step-idx {
+            width: 30px; height: 30px;
+            background: #000;
+            border: 1px solid var(--neon-green);
+            color: var(--neon-green);
+            border-radius: 6px;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Rajdhani'; font-weight: 700; font-size: 14px;
+            z-index: 2;
+            box-shadow: 0 0 10px rgba(0, 255, 163, 0.2);
+        }
+
+        .step-info h4 { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+        .step-info p { font-size: 13px; color: #aaa; line-height: 1.5; }
+        .highlight { color: var(--neon-green); font-weight: 600; }
+
+        @media (max-width: 480px) {
+            .glass-card { padding: 25px 20px; }
+            h1 { font-size: 26px; }
+            .cursor-dot, .cursor-circle { display: none; }
+            * { cursor: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="loader-screen" id="loader">
+        <div class="loader-text" data-key="loader_text">INITIALIZING DIGITAL ENVIRONMENT...</div>
+        <div class="loader-bar"></div>
+    </div>
+
+    <div class="cursor-dot"></div>
+    <div class="cursor-circle"></div>
+
+    <canvas id="bg-canvas"></canvas>
+    <div class="vignette"></div>
+
+    <div class="card-perspective" id="card">
+        <div class="glass-card">
+            
+            <div class="glow-spot"></div>
+
+            <div class="top-bar">
+                <div class="status-badge">
+                    <div class="status-dot"></div>
+                    <span data-key="status">DEV MODE ACTIVATED</span>
+                </div>
+                <div class="lang-switch">
+                    <span id="lang-ru" class="active">RU</span>
+                    <span id="lang-en">EN</span>
+                </div>
+            </div>
+
+            <div class="profile-section">
+                <div class="avatar-container">
+                    <div class="avatar-img">
+                        <div class="scan-line"></div>
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M4 7V17C4 17.5523 4.44772 18 5 18H19C19.5523 18 20 17.5523 20 17V7C20 6.44772 19.5523 6 19 6H5C4.44772 6 4 6.44772 4 7Z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M12 14L16 14M8 10L10 12L8 14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="glitch-wrapper">
+                    <h1 class="glitch" data-text="X3LAY">X3LAY</h1>
+                </div>
+                <div class="role-tag" data-key="role">&lt; DIGITAL ENGINEER &gt;</div>
+            </div>
+
+            <div class="bio-text" data-key="bio_text">
+                Приветствую. Занимаюсь программированием <span class="highlight-lang">более 7 лет</span>. 
+                Владею: <span class="highlight-lang">Python, C#, C++, JavaScript, PHP</span>.
+                Устаревшие ЯП: Delphi, VB.
+            </div>
+
+            <div class="stats-row">
+                <div class="stat-box">
+                    <span class="stat-num">7+</span>
+                    <span class="stat-label" data-key="stat_years_label">Опыт (Лет)</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-num" style="color: var(--neon-green)">400+</span>
+                    <span class="stat-label" data-key="stat_projects_label">Готовых Работ</span>
+                </div>
+            </div>
+
+            <div class="divider">
+                <svg viewBox="0 0 24 24"><path d="M13 2L3 14H12L11 22L21 10H12L13 2Z"/></svg>
+                <span data-key="divider_links">Связь и Проекты</span>
+            </div>
+
+            <div class="cyber-links">
+                <a href="https://t.me/coderingonelove" target="_blank" class="cyber-btn link-hover">
+                    <div class="btn-content">
+                        <h3 data-key="link_order_title">Заказать у меня в ЛС</h3>
+                        <p data-key="link_order_desc">@coderingonelove • Напиши, чтобы начать</p>
+                    </div>
+                    <div class="btn-icon">➤</div>
+                </a>
+
+                <a href="#" class="cyber-btn link-hover">
+                    <div class="btn-content">
+                        <h3 data-key="link_github_title">GitHub</h3>
+                        <p data-key="link_github_desc">Репозитории и Open Source проекты (Coming Soon)</p>
+                    </div>
+                    <div class="btn-icon">💻</div>
+                </a>
+
+                <a href="#" class="cyber-btn link-hover">
+                    <div class="btn-content">
+                        <h3 data-key="link_projects_title">Проекты (10+)</h3>
+                        <p data-key="link_projects_desc">Мои собственные разработанные системы</p>
+                    </div>
+                    <div class="btn-icon">📦</div>
+                </a>
+                
+                <a href="https://t.me/x3layreviews" class="cyber-btn link-hover">
+                    <div class="btn-content">
+                        <h3 data-key="link_reviews_title">Reviews</h3>
+                        <p data-key="link_reviews_desc">Отзывы о качестве и сроках</p>
+                    </div>
+                    <div class="btn-icon">★</div>
+                </a>
+            </div>
+
+            <div class="divider">
+                <svg viewBox="0 0 24 24"><path d="M9 5H7C5.89543 5 5 5.89543 5 7V19C5 20.1046 5.89543 21 7 21H17C18.1046 21 19 20.1046 19 19V7C19 5.89543 18.1046 6 17 6H15M9 5C9 6.10457 9.89543 7 11 7H13C14.1046 7 15 6.10457 15 5M9 5C9 3.89543 9.89543 3 11 3H13C14.1046 3 15 3.89543 15 5"/></svg>
+                <span data-key="divider_advantages">Преимущества</span>
+            </div>
+
+            <div class="steps-container">
+                <div class="step">
+                    <div class="step-idx">01</div>
+                    <div class="step-info">
+                        <h4 data-key="adv_speed_title">Скорость выполнения</h4>
+                        <p data-key="adv_speed_desc">Быстрая разработка без потери качества.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-idx">02</div>
+                    <div class="step-info">
+                        <h4 data-key="adv_price_title">Доступная Цена</h4>
+                        <p data-key="adv_price_desc">Дешёвые цены, <span class="highlight">никаких лишних нулей</span> в счёте.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-idx">03</div>
+                    <div class="step-info">
+                        <h4 data-key="adv_comm_title">Общение</h4>
+                        <p data-key="adv_comm_desc">Нету гордости, общаюсь с Вами, <span class="highlight">как с другом</span>.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-idx">04</div>
+                    <div class="step-info">
+                        <h4 data-key="adv_quality_title">Качество</h4>
+                        <p data-key="adv_quality_desc">Всегда фокус на <span class="highlight">идеальном результате</span> работы.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const translations = {
+            'ru': {
+                'title': 'x3lay | BIO ',
+                'loader_text': 'INITIALIZING DIGITAL ENVIRONMENT...',
+                'status': 'DEV MODE ACTIVATED',
+                'role': '< DIGITAL ENGINEER >',
+                'bio_text': 'Приветствую. Занимаюсь программированием <span class="highlight-lang">более 7 лет</span>. Владею: <span class="highlight-lang">Python, C#, C++, JavaScript, PHP</span>. Устаревшие ЯП: Delphi, VB.',
+                'stat_years_label': 'Опыт (Лет)',
+                'stat_projects_label': 'Готовых Работ',
+                'divider_links': 'Связь и Проекты',
+                'link_order_title': 'Заказать у меня в ЛС',
+                'link_order_desc': '@coderingonelove • Напиши, чтобы начать',
+                'link_github_title': 'GitHub',
+                'link_github_desc': 'Репозитории и Open Source проекты (Coming Soon)',
+                'link_projects_title': 'Проекты (10+)',
+                'link_projects_desc': 'Мои собственные разработанные системы',
+                'link_reviews_title': 'Отзывы',
+                'link_reviews_desc': 'Отзывы о качестве и сроках',
+                'divider_advantages': 'Преимущества',
+                'adv_speed_title': 'Скорость выполнения',
+                'adv_speed_desc': 'Быстрая разработка без потери качества.',
+                'adv_price_title': 'Доступная Цена',
+                'adv_price_desc': 'Дешёвые цены, <span class="highlight">никаких лишних нулей</span> в счёте.',
+                'adv_comm_title': 'Общение',
+                'adv_comm_desc': 'Нету гордости, общаюсь с Вами, <span class="highlight">как с другом</span>.',
+                'adv_quality_title': 'Качество',
+                'adv_quality_desc': 'Всегда фокус на <span class="highlight">идеальном результате</span> работы.'
+            },
+            'en': {
+                'title': 'x3lay | BIO ',
+                'loader_text': 'INITIALIZING DIGITAL ENVIRONMENT...',
+                'status': 'DEV MODE ACTIVATED',
+                'role': '< DIGITAL ENGINEER >',
+                'bio_text': 'Hello. I have been programming for <span class="highlight-lang">over 7 years</span>. Proficient in: <span class="highlight-lang">Python, C#, C++, JavaScript, PHP</span>. Legacy languages: Delphi, VB.',
+                'stat_years_label': 'Experience (Years)',
+                'stat_projects_label': 'Completed Projects',
+                'divider_links': 'Contact & Projects',
+                'link_order_title': 'Order via Direct Message',
+                'link_order_desc': '@coderingonelove • Message to start',
+                'link_github_title': 'GitHub',
+                'link_github_desc': 'Repositories and Open Source projects (Coming Soon)',
+                'link_projects_title': 'Projects (10+)',
+                'link_projects_desc': 'My own developed systems',
+                'link_reviews_title': 'Reviews',
+                'link_reviews_desc': 'Quality and timeline reviews',
+                'divider_advantages': 'Advantages',
+                'adv_speed_title': 'Execution Speed',
+                'adv_speed_desc': 'Fast development without compromising quality.',
+                'adv_price_title': 'Affordable Pricing',
+                'adv_price_desc': 'Low costs, <span class="highlight">no unnecessary zeros</span> in the bill.',
+                'adv_comm_title': 'Communication',
+                'adv_comm_desc': 'No arrogance; I communicate with you <span class="highlight">as a friend</span>.',
+                'adv_quality_title': 'Quality',
+                'adv_quality_desc': 'Always focused on the <span class="highlight">perfect result</span> of the work.'
+            }
+        };
+
+        let currentLang = 'ru';
+
+        function setLanguage(lang) {
+            const elements = document.querySelectorAll('[data-key]');
+            const langData = translations[lang];
+
+            if (!langData) return;
+            
+            elements.forEach(el => {
+                const key = el.getAttribute('data-key');
+                if (langData[key] !== undefined) {
+                    el.innerHTML = langData[key];
+                }
+            });
+
+            document.title = langData.title;
+
+            document.getElementById('lang-ru').classList.remove('active');
+            document.getElementById('lang-en').classList.remove('active');
+            document.getElementById(`lang-${lang}`).classList.add('active');
+
+            currentLang = lang;
+            document.documentElement.lang = lang;
+        }
+
+        document.getElementById('lang-ru').addEventListener('click', () => setLanguage('ru'));
+        document.getElementById('lang-en').addEventListener('click', () => setLanguage('en'));
+
+        window.addEventListener('load', () => {
+            setLanguage(currentLang);
+            const loader = document.getElementById('loader');
+            setTimeout(() => {
+                loader.style.opacity = '0';
+                loader.style.visibility = 'hidden';
+            }, 1000);
+        });
+
+        const cursorDot = document.querySelector('.cursor-dot');
+        const cursorCircle = document.querySelector('.cursor-circle');
+        const links = document.querySelectorAll('.link-hover');
+
+        let mouseX = 0, mouseY = 0;
+        let cursorX = 0, cursorY = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            
+            cursorDot.style.left = mouseX + 'px';
+            cursorDot.style.top = mouseY + 'px';
+        });
+
+        function animateCursor() {
+            let dist = (mouseX - cursorX);
+            cursorX += dist * 0.15;
+            let distY = (mouseY - cursorY);
+            cursorY += distY * 0.15;
+
+            cursorCircle.style.left = cursorX + 'px';
+            cursorCircle.style.top = cursorY + 'px';
+            
+            requestAnimationFrame(animateCursor);
+        }
+        animateCursor();
+
+        links.forEach(link => {
+            link.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
+            link.addEventListener('mouseleave', () => document.body.classList.remove('hovering'));
+        });
+
+        const card = document.querySelector('.glass-card');
+        const wrapper = document.querySelector('.card-perspective');
+
+        wrapper.addEventListener('mousemove', (e) => {
+            if (window.innerWidth < 768) return;
+            
+            const rect = wrapper.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            
+            const rotateX = ((y - centerY) / centerY) * -5;
+            const rotateY = ((x - centerX) / centerX) * 5;
+
+            card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        });
+
+        wrapper.addEventListener('mouseleave', () => {
+            card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg)`;
+        });
+
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let particles = [];
+        const particleCount = window.innerWidth < 768 ? 30 : 60; 
+        const connectionDistance = 150;
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.size = Math.random() * 2;
+                this.color = '#00ffa3';
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        for (let i = 0; i < particleCount; i++) {
+            particles.push(new Particle());
+        }
+
+        function animateCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+
+                for (let j = i; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < connectionDistance) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = `rgba(0, 255, 163, ${1 - distance / connectionDistance})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(animateCanvas);
+        }
+
+        animateCanvas();
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+    </script>
+</body>
+</html>
